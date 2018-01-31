@@ -9,6 +9,7 @@ public class Rotation : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		result = Mathf.Cos (Mathf.PI/4) * Vector3.right + Mathf.Sin (Mathf.PI/4) * Vector3.forward;
+        Debug.Log(result);
 	}
 	
 	// Update is called once per frame
