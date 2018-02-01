@@ -2,7 +2,7 @@
 
 public class IMU_Orientation : MonoBehaviour
 {
-    float m_checksum;
+    //float m_checksum;
     [Range(0, 1)]
     public float rotationSpeed = 0.5f;
     IMU_SerialCommunication m_serialManager;
@@ -39,7 +39,7 @@ public class IMU_Orientation : MonoBehaviour
 
         rotation.Set(x, y, z, w);
         //calibrationStatus = int.Parse(tokens[tokens.Length - 3]);
-        m_checksum = Mathf.Sqrt(w * w + x * x + y * y + z * z);
+        //m_checksum = Mathf.Sqrt(w * w + x * x + y * y + z * z);
         //if(Mathf.Abs(m_checksum - float.Parse(tokens[tokens.Length-2])) < 0.1)
         //{
         Quaternion rotationAdjust = Quaternion.identity;

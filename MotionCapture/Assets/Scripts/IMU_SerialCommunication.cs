@@ -1,17 +1,29 @@
 ﻿using UnityEngine;
 using System.IO.Ports;
+using System.Threading;
 
 public class IMU_SerialCommunication : IMU_Communication
 {
     public string port = "COM3"; //When using MacOS -> "/dev/cu.usbmodem1411"
-    public int baudRate = 9600;
+    public int baudRate = 38400;
     SerialPort m_stream;
+    Thread m_receiveDataThread;
+
+    string m_returnData;
+    public string ReturnData { get { return m_returnData; } }
 
     public override void Awake()
     {
         base.Awake();
         m_stream = new SerialPort(port, baudRate);
         InitComm();
+    }
+
+    public override void InitComm()
+    {
+        base.InitComm();
+        m_receiveDataThread = new Thread(new ThreadStart(FetchData));
+        m_receiveDataThread.Start();
     }
 
     public override void FetchData()
@@ -27,16 +39,17 @@ public class IMU_SerialCommunication : IMU_Communication
                 break;
             }
             m_returnData = m_stream.ReadLine();
-            //Debug.Log(m_returnData);
             if (m_returnData != null)
             {
-                //if (m_returnData.StartsWith("{"))
-                //{
-                //    OnCalibrationReceived(m_returnData);
-                //}
                 m_stream.BaseStream.Flush();
             }
         }
+    }
+
+    public string[] SplittedData()
+    {
+        string[] tokens = m_returnData.Split(',');
+        return tokens;
     }
 
     public override void OnCommTerminate()

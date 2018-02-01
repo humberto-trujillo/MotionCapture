@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Threading;
 using System;
 using System.Collections.Generic;
 
@@ -10,11 +9,6 @@ using System.Collections.Generic;
 public abstract class IMU_Communication : Singleton<IMU_Communication>
 {
     public List<GameObject> bodyParts = new List<GameObject>();
-
-    protected string m_returnData;
-
-    public string ReturnData { get { return m_returnData; } }
-    protected Thread m_receiveDataThread;
 
     /// <summary>
     /// Delegate event callback that executes when calibration data is received.
@@ -44,16 +38,9 @@ public abstract class IMU_Communication : Singleton<IMU_Communication>
     /// <summary>
     /// Initializes communication thread
     /// </summary>
-    protected void InitComm()
+    public virtual void InitComm()
     {
-        m_receiveDataThread = new Thread(new ThreadStart(FetchData));
-        m_receiveDataThread.Start();
-    }
-
-    public string[] SplittedData()
-    {
-        string[] tokens = m_returnData.Split(',');
-        return tokens;
+        Debug.Log("Initiating COMM Channel...");
     }
 
     /// <summary>
