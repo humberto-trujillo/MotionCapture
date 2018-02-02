@@ -1,6 +1,18 @@
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "Wire.h"
+#include <ESP8266WiFi.h>
+
+/*
+Wifi stuff
+*/
+const char* ssid     = "STR";      // SSID
+const char* password = "LABRTS2011-1";      // Password
+const char* host = "192.168.0.113";  //Server IP
+const int   port = 56789;            // Port serveur - Server Port
+const int   watchdog = 5000;        // Fréquence du watchdog - Watchdog frequency
+unsigned long previousMillis = millis(); 
+WiFiClient client;
 
 MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
@@ -21,16 +33,45 @@ float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
-void dmpDataReady() {
+
+void dmpDataReady() 
+{
   mpuInterrupt = true;
 }
 
-void setup() {
+void setup() 
+{
   Wire.begin();
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
   Serial.begin(38400);
   while (!Serial); // wait for Leonardo enumeration, others continue immediately
   // initialize device
+
+  
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");  
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+  if (!client.connect(host, port))
+  {
+    Serial.println("connection failed");
+  }
+  else
+  {
+    Serial.println("Connection to Host successful!");
+  }
+  
+  
+
   Serial.println(F("Initializing I2C devices..."));
   mpu.initialize();
   pinMode(INTERRUPT_PIN, INPUT);
@@ -51,7 +92,8 @@ void setup() {
   mpu.setZGyroOffset(-85);
   mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
   // make sure it worked (returns 0 if so)
-  if (devStatus == 0) {
+  if (devStatus == 0) 
+  {
     // turn on the DMP, now that it's ready
     Serial.println(F("Enabling DMP..."));
     mpu.setDMPEnabled(true);
@@ -65,7 +107,8 @@ void setup() {
     // get expected DMP packet size for later comparison
     packetSize = mpu.dmpGetFIFOPacketSize();
   }
-  else {
+  else 
+  {
     // ERROR!
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
@@ -76,21 +119,25 @@ void setup() {
   }
 }
 
-void loop() {
+void loop() 
+{
   // if programming failed, don't try to do anything
-  if (!dmpReady) return;
+  if (!dmpReady)
+    return;
   // reset interrupt flag and get INT_STATUS byte
   mpuInterrupt = false;
   mpuIntStatus = mpu.getIntStatus();
   // get current FIFO count
   fifoCount = mpu.getFIFOCount();
   // check for overflow (this should never happen unless our code is too inefficient)
-  if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
+  if ((mpuIntStatus & 0x10) || fifoCount == 1024) 
+  {
     // reset so we can continue cleanly
     mpu.resetFIFO();
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
   }
-  else if (mpuIntStatus & 0x02) {
+  else if (mpuIntStatus & 0x02)
+  {
     // wait for correct available data length, should be a VERY short wait
     while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
     // read a packet from FIFO
@@ -102,15 +149,7 @@ void loop() {
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    //X-axis or roll
-//    Serial.print("accx:");
-//    Serial.println(ypr[2] * 180 / M_PI);
-//    //y-axis or pitch
-//    Serial.print("accy:");
-//    Serial.println (ypr[1] * 180 / M_PI);
-//    //z-axis or yaw
-//    Serial.print("accz:");
-//    Serial.println(ypr[0] * 180 / M_PI);
+
     String frame = "";
     frame += q.w;
     frame += ",";
@@ -120,6 +159,7 @@ void loop() {
     frame += ",";
     frame += q.z;
     Serial.println(frame);
+    client.println(frame);
   }
   delay(5);
 }

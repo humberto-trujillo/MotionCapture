@@ -244,13 +244,13 @@ Transform:
 GameObject:
   m_PrefabParentObject: {fileID: 105154, guid: dd578aa8d54df344c9e03b021ceed5a2, type: 2}
   m_PrefabInternal: {fileID: 1054969878}
---- !u!114 &1293667987
+--- !u!114 &1293667988
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1293667986}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bab88fc98506de648b381fe995ed7207, type: 3}
   m_Name: 
@@ -296,6 +296,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92d65a81d97cbeb43b3de62e9e2057ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bodyParts: []
   port: COM3
   baudRate: 38400
 --- !u!1 &1875131171

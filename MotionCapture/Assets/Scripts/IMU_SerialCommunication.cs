@@ -15,6 +15,11 @@ public class IMU_SerialCommunication : IMU_Communication
     public override void Awake()
     {
         base.Awake();
+        string[] ports = SerialPort.GetPortNames();
+        foreach (var item in ports)
+        {
+            Debug.Log(item);
+        }
         m_stream = new SerialPort(port, baudRate);
         InitComm();
     }

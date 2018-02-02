@@ -51,7 +51,7 @@ public abstract class IMU_Communication : Singleton<IMU_Communication>
         Debug.Log("Closing communication!");
     }
 
-    private void OnApplicationQuit()
+    void OnApplicationQuit()
     {
         OnCommTerminate();
     }

@@ -6,6 +6,7 @@ using System;
 
 public class IMU_TcpCommunication : MonoBehaviour 
 {
+    public int port = 56789;
 	/// <summary>
 	/// Lista de conexiones
 	/// </summary>
@@ -21,16 +22,18 @@ public class IMU_TcpCommunication : MonoBehaviour
 	/// </summary>
 	TcpListener listener;
 
-	public void Awake()
+	void Awake()
 	{
-		//escuchar nuevas conexiones entrantes
-		listener = new TcpListener(IPAddress.Any,56789);
+        //base.Awake();
+		listener = new TcpListener(IPAddress.Any, port);
 		listener.Start();
+        Debug.Log("Waiting for connections...");
 		listener.BeginAcceptTcpClient(OnServerConnect, null);
 	}
 
 	void OnApplicationQuit()
 	{
+
 		if(listener != null)
 		{
 			listener.Stop();
