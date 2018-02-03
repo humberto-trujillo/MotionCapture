@@ -293,12 +293,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1733431202}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 92d65a81d97cbeb43b3de62e9e2057ac, type: 3}
+  m_Script: {fileID: 11500000, guid: 608803e7583a140b4959466f32a9f554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bodyParts: []
-  port: COM3
-  baudRate: 38400
+  port: 5001
 --- !u!1 &1875131171
 GameObject:
   m_ObjectHideFlags: 0
