@@ -4,58 +4,61 @@ using System.Net;
 using System.Net.Sockets;
 using System;
 
-public class IMU_TcpCommunication : MonoBehaviour 
+public class IMU_TcpCommunication : Singleton<IMU_TcpCommunication>
 {
-    public int port = 56789;
+    public delegate void OnClientConnected(TcpConnectedIMU connection);
+    public event OnClientConnected ClientConnectedEvent;
+
+    public int port = 5001;
+
 	/// <summary>
 	/// Lista de conexiones
 	/// </summary>
-	List<TcpConnectedIMU> clientList = new List<TcpConnectedIMU>();
-
-	/// <summary>
-	/// El string para renderizar en Unity.
-	/// </summary>
-	public static string messageToDisplay;
+	List<TcpConnectedIMU> m_clientList = new List<TcpConnectedIMU>();
 
 	/// <summary>
 	/// Acepta nuevas conexiones
 	/// </summary>
-	TcpListener listener;
+	TcpListener m_listener;
 
-	void Awake()
-	{
-        //base.Awake();
-		listener = new TcpListener(IPAddress.Any, port);
-		listener.Start();
+    public override void Awake()
+    {
+        base.Awake();
+        m_listener = new TcpListener(IPAddress.Any, port);
+        m_listener.Start();
         Debug.Log("Waiting for connections...");
-		listener.BeginAcceptTcpClient(OnServerConnect, null);
+		m_listener.BeginAcceptTcpClient(OnServerConnect, null);
 	}
 
 	void OnApplicationQuit()
 	{
-
-		if(listener != null)
+		if(m_listener != null)
 		{
-			listener.Stop();
+			m_listener.Stop();
 		}
-		for(int i = 0; i < clientList.Count; i++)
+		for(int i = 0; i < m_clientList.Count; i++)
 		{
-			clientList[i].Close();
+			m_clientList[i].Close();
 		}
 	}
 
 	#region Async Events
 	void OnServerConnect(IAsyncResult ar)
 	{
-		TcpClient tcpClient = listener.EndAcceptTcpClient(ar);
-		clientList.Add(new TcpConnectedIMU(tcpClient));
-		listener.BeginAcceptTcpClient(OnServerConnect, null);
-		Debug.Log ("Cliente conectado!");
+		TcpClient tcpClient = m_listener.EndAcceptTcpClient(ar);
+        TcpConnectedIMU connection = new TcpConnectedIMU(tcpClient);
+        m_clientList.Add(connection);
+        Debug.Log("Cliente conectado!");
+        if(ClientConnectedEvent != null)
+        {
+            ClientConnectedEvent(connection);
+        }
+        m_listener.BeginAcceptTcpClient(OnServerConnect, null);
 	}
 	#endregion
 
 	public void OnDisconnect(TcpConnectedIMU client)
 	{
-		clientList.Remove(client);
+		m_clientList.Remove(client);
 	}
 }

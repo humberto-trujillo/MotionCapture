@@ -1,52 +1,46 @@
-﻿using UnityEngine;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System;
 
+[System.Serializable]
 public class TcpConnectedIMU
 {
 	/// <summary>
 	/// Conexión a IMU (cliente)
 	/// </summary>
-	readonly TcpClient connection;
+	readonly TcpClient m_connection;
+	readonly byte[] m_readBuffer = new byte[5000];
+	NetworkStream Stream { get{ return m_connection.GetStream(); } }
 
-	readonly byte[] readBuffer = new byte[5000];
-	NetworkStream stream { get{ return connection.GetStream(); } }
+    string m_latestMessage;
+    public string LatestMessage { get { return m_latestMessage; } }
 
-	public TcpConnectedIMU(TcpClient tcpClient)
+    public TcpConnectedIMU(TcpClient tcpClient)
 	{
-		connection = tcpClient;
-		connection.NoDelay = true; // deshabilitar caché
-		stream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+		m_connection = tcpClient;
+		m_connection.NoDelay = true;
+		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
 	}
 
 	internal void Close()
 	{
-		connection.Close();
+		m_connection.Close();
 	}
 
 	void OnRead(IAsyncResult ar)
 	{
-		int length = stream.EndRead(ar);
+		int length = Stream.EndRead(ar);
 		if(length <= 0)
-		{ // Connection closed
-			//TCPChat.instance.OnDisconnect(this);
+		{
+            IMU_TcpCommunication.Instance.OnDisconnect(this);
 			return;
 		}
-
-		string newMessage = System.Text.Encoding.UTF8.GetString(readBuffer, 0, length);
-		//TcpIMUCommunication.messageToDisplay += newMessage + Environment.NewLine;
-		Debug.Log(newMessage);
-//		if(TCPChat.instance.isServer)
-//		{
-//			TCPChat.BroadcastChatMessage(newMessage);
-//		}
-
-		stream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+        m_latestMessage = System.Text.Encoding.UTF8.GetString(m_readBuffer, 0, length);
+		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
 	}
 
 	internal void EndConnect(IAsyncResult ar)
 	{
-		connection.EndConnect(ar);
-		stream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+		m_connection.EndConnect(ar);
+		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
 	}
 }

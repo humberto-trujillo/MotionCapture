@@ -1,39 +1,33 @@
 ﻿using UnityEngine;
 
-public class IMU_Orientation : MonoBehaviour
+public class IMU_SerialOrientation : MonoBehaviour
 {
+    //float m_checksum;
     [Range(0, 1)]
-    public float interpolationSpeed = 0.5f;
-    TcpConnectedIMU m_IMUConnection;
+    public float rotationSpeed = 0.5f;
+    IMU_SerialCommunication m_serialManager;
 
     void Start()
     {
+        m_serialManager = IMU_SerialCommunication.Instance as IMU_SerialCommunication;
         transform.rotation = Quaternion.identity;
-    }
-
-    public void Init(TcpConnectedIMU connection)
-    {
-        m_IMUConnection = connection;
     }
 
     void Update()
     {
-        if(m_IMUConnection != null)
+        string latestFrame = m_serialManager.ReturnData;
+        if (latestFrame != null)
         {
-            string latestFrame = m_IMUConnection.LatestMessage;
-            if (latestFrame != null)
+            //int calibStatus = 0;
+            Quaternion newRotation = ParseRotation(latestFrame/*, ref calibStatus*/);
+            if (newRotation != Quaternion.identity)
             {
-                //int calibStatus = 0;
-                Quaternion newOrientation = ParseOrientationFrame(latestFrame/*, ref calibStatus*/);
-                if (newOrientation != Quaternion.identity)
-                {
-                    transform.rotation = Quaternion.Slerp(transform.rotation, newOrientation, interpolationSpeed);
-                }
+                transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, rotationSpeed);
             }
         }
     }
 
-    Quaternion ParseOrientationFrame(string frame/*, ref int calibrationStatus*/)
+    Quaternion ParseRotation(string frame/*, ref int calibrationStatus*/)
     {
         Quaternion rotation = Quaternion.identity;
         string[] tokens = frame.Split(',');
@@ -53,5 +47,7 @@ public class IMU_Orientation : MonoBehaviour
         // 90 degree adjustment because of the mounting orientation
         rotationAdjust.Set(0.7071f, 0, 0, 0.7071f);
         return rotationAdjust * rotation;
+        //}
+        //return transform.rotation;
     }
 }
