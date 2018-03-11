@@ -48,7 +48,7 @@ public class IMU_TcpCommunication : Singleton<IMU_TcpCommunication>
 		TcpClient tcpClient = m_listener.EndAcceptTcpClient(ar);
         TcpConnectedIMU connection = new TcpConnectedIMU(tcpClient);
         m_clientList.Add(connection);
-        Debug.Log("Cliente conectado!");
+        Debug.Log("Client connected!");
         if(ClientConnectedEvent != null)
         {
             ClientConnectedEvent(connection);
@@ -60,5 +60,6 @@ public class IMU_TcpCommunication : Singleton<IMU_TcpCommunication>
 	public void OnDisconnect(TcpConnectedIMU client)
 	{
 		m_clientList.Remove(client);
+		Debug.Log ("Client disconnected!");
 	}
 }

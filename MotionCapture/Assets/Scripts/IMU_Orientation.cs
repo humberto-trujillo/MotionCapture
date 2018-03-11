@@ -2,6 +2,9 @@
 
 public class IMU_Orientation : MonoBehaviour
 {
+	public bool IsInitialized {get { return m_isInit;}}
+	bool m_isInit = false;
+
     [Range(0, 1)]
     public float interpolationSpeed = 0.5f;
     TcpConnectedIMU m_IMUConnection;
@@ -14,6 +17,7 @@ public class IMU_Orientation : MonoBehaviour
     public void Init(TcpConnectedIMU connection)
     {
         m_IMUConnection = connection;
+		m_isInit = true;
     }
 
     void Update()
@@ -21,15 +25,15 @@ public class IMU_Orientation : MonoBehaviour
         if(m_IMUConnection != null)
         {
             string latestFrame = m_IMUConnection.LatestMessage;
-            if (latestFrame != null)
-            {
-                //int calibStatus = 0;
-                Quaternion newOrientation = ParseOrientationFrame(latestFrame/*, ref calibStatus*/);
-                if (newOrientation != Quaternion.identity)
-                {
-                    transform.rotation = Quaternion.Slerp(transform.rotation, newOrientation, interpolationSpeed);
-                }
-            }
+			if (!string.IsNullOrEmpty (latestFrame)) 
+			{
+				//int calibStatus = 0;
+				Quaternion newOrientation = ParseOrientationFrame (latestFrame/*, ref calibStatus*/);
+				if (newOrientation != Quaternion.identity) 
+				{
+					transform.rotation = Quaternion.Slerp (transform.rotation, newOrientation, interpolationSpeed);
+				}
+			}
         }
     }
 

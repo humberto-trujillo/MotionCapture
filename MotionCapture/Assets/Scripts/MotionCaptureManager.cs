@@ -7,30 +7,39 @@ public class MotionCaptureManager : MonoBehaviour
     public struct BodyPart
     {
         public GameObject bodyPart;
-        public Material material;
+		public IMU_Orientation orientation;
     }
 
     IMU_TcpCommunication m_tcpCommunication;
-    public List<BodyPart> bodyParts = new List<BodyPart>();
-
-    int bodyPartIndex = 0;
-
-    void Awake()
-    {
-        m_tcpCommunication = IMU_TcpCommunication.Instance;
-    }
+	public BodyPart[] bodyParts;
 
     void Start ()
     {
+		m_tcpCommunication = IMU_TcpCommunication.Instance;
         m_tcpCommunication.ClientConnectedEvent += InitOrientationComponent;
-        foreach (var part in bodyParts)
+		for(int i=0; i<bodyParts.Length;i++)
         {
-            part.bodyPart.AddComponent<IMU_Orientation>();
+			bodyParts[i].orientation = bodyParts[i].bodyPart.AddComponent<IMU_Orientation>();
         }
 	}
 
     void InitOrientationComponent(TcpConnectedIMU connection)
     {
-        bodyParts[bodyPartIndex++].bodyPart.GetComponent<IMU_Orientation>().Init(connection);
+		IMU_Orientation orientation = GetNotInitializedBodyPart();
+		orientation.Init(connection);
     }
+
+	IMU_Orientation GetNotInitializedBodyPart()
+	{
+		IMU_Orientation component = null;
+		for (int i = 0; i < bodyParts.Length; i++) 
+		{
+			component = bodyParts[i].orientation;
+			if (!component.IsInitialized) 
+			{
+				return component;
+			}	
+		}
+		return null;
+	}
 }

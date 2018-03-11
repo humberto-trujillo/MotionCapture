@@ -37,10 +37,4 @@ public class TcpConnectedIMU
         m_latestMessage = System.Text.Encoding.UTF8.GetString(m_readBuffer, 0, length);
 		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
 	}
-
-	internal void EndConnect(IAsyncResult ar)
-	{
-		m_connection.EndConnect(ar);
-		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
-	}
 }
