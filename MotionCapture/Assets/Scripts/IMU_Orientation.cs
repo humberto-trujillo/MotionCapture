@@ -41,11 +41,24 @@ public class IMU_Orientation : MonoBehaviour
     {
         Quaternion rotation = Quaternion.identity;
         string[] tokens = frame.Split(',');
+		if (tokens.Length < 4) 
+		{
+			return transform.rotation;
+		}
 
-        float w = float.Parse(tokens[0]);
-        float x = float.Parse(tokens[1]);
-        float y = float.Parse(tokens[2]);
-        float z = float.Parse(tokens[3]);
+		bool parsingResult = false;
+		float w, x, y, z;
+
+		parsingResult = float.TryParse(tokens[0], out w);
+		parsingResult = float.TryParse(tokens[1], out x);
+		parsingResult = float.TryParse(tokens[2], out y);
+		parsingResult = float.TryParse(tokens[3], out z);
+
+		if (!parsingResult) 
+		{
+			Debug.LogWarning ("Parsing error with frame: "+ frame);
+			return transform.rotation;
+		}
 
         rotation.Set(x, y, z, w);
         //calibrationStatus = int.Parse(tokens[tokens.Length - 3]);

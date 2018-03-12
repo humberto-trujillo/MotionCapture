@@ -62,4 +62,13 @@ public class IMU_TcpCommunication : Singleton<IMU_TcpCommunication>
 		m_clientList.Remove(client);
 		Debug.Log ("Client disconnected!");
 	}
+
+	public void PrintConnections()
+	{
+		Debug.Log ("Connected Devices:");
+		foreach (var item in m_clientList) 
+		{
+			Debug.Log(item.IPAddress);	
+		}
+	}
 }

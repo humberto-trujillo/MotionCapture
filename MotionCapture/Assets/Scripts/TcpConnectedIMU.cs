@@ -1,5 +1,7 @@
 ﻿using System.Net.Sockets;
 using System;
+using System.Net;
+using UnityEngine;
 
 [System.Serializable]
 public class TcpConnectedIMU
@@ -13,6 +15,7 @@ public class TcpConnectedIMU
 
     string m_latestMessage;
     public string LatestMessage { get { return m_latestMessage; } }
+	public string IPAddress { get { return ((IPEndPoint)m_connection.Client.RemoteEndPoint).Address.ToString(); } }
 
     public TcpConnectedIMU(TcpClient tcpClient)
 	{
@@ -35,6 +38,7 @@ public class TcpConnectedIMU
 			return;
 		}
         m_latestMessage = System.Text.Encoding.UTF8.GetString(m_readBuffer, 0, length);
+		Debug.Log (m_latestMessage);
 		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
 	}
 }

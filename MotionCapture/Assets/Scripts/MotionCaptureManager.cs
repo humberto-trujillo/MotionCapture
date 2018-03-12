@@ -3,10 +3,25 @@ using UnityEngine;
 
 public class MotionCaptureManager : MonoBehaviour
 {
+	public enum BodyPartType
+	{
+		Head,
+		Torso,
+		RightForearm,
+		RightShoulder,
+		LeftForearm,
+		LeftShoulder,
+		RightUpperLeg,
+		RightLowerLeg,
+		LeftUpperLeg,
+		LeftLowerLeg
+	}
+
     [System.Serializable]
     public struct BodyPart
     {
         public GameObject bodyPart;
+		public BodyPartType type;
 		public IMU_Orientation orientation;
     }
 
