@@ -59,8 +59,9 @@ public class IMU_Orientation : MonoBehaviour
 			Debug.LogWarning ("Parsing error with frame: "+ frame);
 			return transform.rotation;
 		}
+        //Cordinate system transfer
+        rotation.Set(-x, -z, -y, w);
 
-        rotation.Set(x, y, z, w);
         //calibrationStatus = int.Parse(tokens[tokens.Length - 3]);
         //m_checksum = Mathf.Sqrt(w * w + x * x + y * y + z * z);
         //if(Mathf.Abs(m_checksum - float.Parse(tokens[tokens.Length-2])) < 0.1)
