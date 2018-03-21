@@ -7,18 +7,19 @@ public class IMU_Orientation : MonoBehaviour
 
     [Range(0, 1)]
     public float interpolationSpeed = 0.5f;
-    TcpConnectedIMU m_IMUConnection;
+    //TcpConnectedIMU m_IMUConnection;
+	UdpConnectedIMU m_IMUConnection;
 
     void Start()
     {
-        transform.rotation = Quaternion.identity;
+        //transform.rotation = Quaternion.identity;
     }
-
-    public void Init(TcpConnectedIMU connection)
-    {
-        m_IMUConnection = connection;
+		
+	public void Init(UdpConnectedIMU connection)
+	{
+		m_IMUConnection = connection;
 		m_isInit = true;
-    }
+	}
 
     void Update()
     {

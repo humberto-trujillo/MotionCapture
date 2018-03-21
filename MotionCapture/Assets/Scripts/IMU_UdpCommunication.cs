@@ -7,15 +7,19 @@ using System.Net.Sockets;
 
 public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication> 
 {
+	public delegate void ClientConnected(UdpConnectedIMU connection);
+	public event ClientConnected OnClientConnected;
+
 	public int port = 5001;
 	List<IPEndPoint> clientList = new List<IPEndPoint>();
-	UdpClient connection;
+	public List<UdpConnectedIMU> connections = new List<UdpConnectedIMU> ();
+	UdpClient serverConnection;
 
 	public override void Awake()
 	{
 		base.Awake();
-		connection = new UdpClient(port);
-		connection.BeginReceive(OnReceive, null);
+		serverConnection = new UdpClient(port);
+		serverConnection.BeginReceive(OnReceive, null);
 		Debug.Log("Waiting for connections...");
 	}
 
@@ -25,6 +29,14 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 		{ // If it's a new client, add to the client list
 			Debug.Log("Connection from "+ipEndpoint);
 			clientList.Add(ipEndpoint);
+
+			UdpConnectedIMU connection = new UdpConnectedIMU(ipEndpoint);
+			connections.Add(connection);
+
+			if (OnClientConnected != null) 
+			{
+				OnClientConnected (connection);
+			}
 		}
     }
 
@@ -41,10 +53,12 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 		try
 		{
 			IPEndPoint ipEndpoint = null;
-			byte[] data = connection.EndReceive(ar, ref ipEndpoint);
+			byte[] data = serverConnection.EndReceive(ar, ref ipEndpoint);
 			AddClient(ipEndpoint);
 
 			string message = System.Text.Encoding.UTF8.GetString(data);
+			connections.Find(con => con.ipEndPoint == ipEndpoint).LatestMessage = message;
+
 			Debug.Log(message);
 
 		}
@@ -52,12 +66,25 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 		{
 			Debug.Log("Client disconnected! "+ e);
 		}
-		connection.BeginReceive(OnReceive, null);
+		serverConnection.BeginReceive(OnReceive, null);
     }
 
     private void OnApplicationQuit()
     {
-		connection.Close();
+		serverConnection.Close();
     }
 
+}
+
+[System.Serializable]
+public class UdpConnectedIMU
+{
+	public IPEndPoint ipEndPoint;
+	string latestMessage;
+	public string LatestMessage {get { return latestMessage;} set{ latestMessage = value;}}
+
+	public UdpConnectedIMU(IPEndPoint ipEndPoint)
+	{
+		this.ipEndPoint = ipEndPoint;
+	}
 }
