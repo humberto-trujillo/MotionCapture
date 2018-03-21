@@ -24,16 +24,13 @@ public class MotionCaptureManager : MonoBehaviour
 		public BodyPartType type;
 		public IMU_Orientation orientation;
     }
-
-    //IMU_TcpCommunication m_tcpCommunication;
 	IMU_UdpCommunication m_udpCommunication;
 	public BodyPart[] bodyParts;
 
+
     void Start ()
     {
-		//m_tcpCommunication = IMU_TcpCommunication.Instance;
 		m_udpCommunication = IMU_UdpCommunication.Instance;
-        //m_tcpCommunication.ClientConnectedEvent += InitOrientationComponent;
 		m_udpCommunication.OnClientConnected += InitOrientationComponent;
 		for(int i=0; i<bodyParts.Length;i++)
         {

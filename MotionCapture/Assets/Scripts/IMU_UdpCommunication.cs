@@ -12,13 +12,18 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 
 	public int port = 5001;
 	List<IPEndPoint> clientList = new List<IPEndPoint>();
-	public List<UdpConnectedIMU> connections = new List<UdpConnectedIMU> ();
+
+	public List<UdpConnectedIMU> connections = new List<UdpConnectedIMU>();
 	UdpClient serverConnection;
 
 	public override void Awake()
 	{
 		base.Awake();
 		serverConnection = new UdpClient(port);
+	}
+
+	void Start()
+	{
 		serverConnection.BeginReceive(OnReceive, null);
 		Debug.Log("Waiting for connections...");
 	}
@@ -30,7 +35,7 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 			Debug.Log("Connection from "+ipEndpoint);
 			clientList.Add(ipEndpoint);
 
-			UdpConnectedIMU connection = new UdpConnectedIMU(ipEndpoint);
+			UdpConnectedIMU connection = new UdpConnectedIMU(ipEndpoint.Address.ToString());
 			connections.Add(connection);
 
 			if (OnClientConnected != null) 
@@ -57,9 +62,17 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 			AddClient(ipEndpoint);
 
 			string message = System.Text.Encoding.UTF8.GetString(data);
-			connections.Find(con => con.ipEndPoint == ipEndpoint).LatestMessage = message;
+			UdpConnectedIMU correspondingConnection = connections.Find(con => con.ipAddress == ipEndpoint.Address.ToString());
+			if(correspondingConnection != null)
+			{
+				correspondingConnection.LatestMessage = message;
+			}
+			else
+			{
+				Debug.Log("Connection not registered!");
+			}
 
-			Debug.Log(message);
+			Debug.Log(message + " From: "+ipEndpoint);
 
 		}
 		catch(SocketException e)
@@ -79,12 +92,12 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 [System.Serializable]
 public class UdpConnectedIMU
 {
-	public IPEndPoint ipEndPoint;
+	public string ipAddress;
 	string latestMessage;
 	public string LatestMessage {get { return latestMessage;} set{ latestMessage = value;}}
 
-	public UdpConnectedIMU(IPEndPoint ipEndPoint)
+	public UdpConnectedIMU(string ipAddress)
 	{
-		this.ipEndPoint = ipEndPoint;
+		this.ipAddress = ipAddress;
 	}
 }
