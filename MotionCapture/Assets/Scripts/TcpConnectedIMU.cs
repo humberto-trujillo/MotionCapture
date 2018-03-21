@@ -39,6 +39,7 @@ public class TcpConnectedIMU
 		}
         m_latestMessage = System.Text.Encoding.UTF8.GetString(m_readBuffer, 0, length);
 		Debug.Log (m_latestMessage);
+		Stream.Flush();
 		Stream.BeginRead(m_readBuffer, 0, m_readBuffer.Length, OnRead, null);
 	}
 }
