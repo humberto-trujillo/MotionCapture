@@ -7,9 +7,14 @@
 /*
 Wifi stuff
 */
-const char* ssid     = "Totalplay-D495";      // SSID
-const char* password = "D4956AD4vdhr6Bj4";      // Password
-const char* host = "192.168.100.5";  //Server IP
+//const char* ssid     = "Totalplay-D495";      // SSID
+//const char* password = "D4956AD4vdhr6Bj4";      // Password
+//const char* host = "192.168.100.5";  //Server IP
+
+const char* ssid     = "STR";
+const char* password = "LABRTS2011-1";
+const char* host = "192.168.0.112";
+
 const int   port = 5001;            // Port serveur - Server Port
 const int   watchdog = 5000;        // Fréquence du watchdog - Watchdog frequency
 unsigned long previousMillis = millis(); 
