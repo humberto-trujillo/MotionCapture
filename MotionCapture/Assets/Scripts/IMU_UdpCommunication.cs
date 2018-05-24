@@ -71,9 +71,7 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 			{
 				Debug.Log("Connection not registered!");
 			}
-
-			Debug.Log(message + " From: "+ipEndpoint);
-
+			//Debug.Log(message + " From: "+ipEndpoint);
 		}
 		catch(SocketException e)
 		{
@@ -86,18 +84,4 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
     {
 		serverConnection.Close();
     }
-
-}
-
-[System.Serializable]
-public class UdpConnectedIMU
-{
-	public string ipAddress;
-	string latestMessage;
-	public string LatestMessage {get { return latestMessage;} set{ latestMessage = value;}}
-
-	public UdpConnectedIMU(string ipAddress)
-	{
-		this.ipAddress = ipAddress;
-	}
 }

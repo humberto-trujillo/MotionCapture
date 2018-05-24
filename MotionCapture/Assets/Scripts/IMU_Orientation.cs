@@ -1,19 +1,22 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class IMU_Orientation : MonoBehaviour
 {
 	public bool IsInitialized {get { return m_isInit;}}
 	bool m_isInit = false;
 
+	public BoneType boneType;
+
     [Range(0, 1)]
     public float interpolationSpeed = 0.5f;
-    //TcpConnectedIMU m_IMUConnection;
 	UdpConnectedIMU m_IMUConnection;
 
-    void Start()
-    {
-        //transform.rotation = Quaternion.identity;
-    }
+	private Quaternion initialOffset;
+	private Quaternion importOffset = new Quaternion(0,0,1,0);
+	private bool isInitialQuaternion = true;
+
+	private Quaternion finalRotation;
 		
 	public void Init(UdpConnectedIMU connection)
 	{
@@ -28,19 +31,23 @@ public class IMU_Orientation : MonoBehaviour
             string latestFrame = m_IMUConnection.LatestMessage;
 			if (!string.IsNullOrEmpty (latestFrame)) 
 			{
-				//int calibStatus = 0;
-				Quaternion newOrientation = ParseOrientationFrame (latestFrame/*, ref calibStatus*/);
-				if (newOrientation != Quaternion.identity) 
+				Debug.Log(latestFrame);
+				Quaternion rotation = ParseOrientationFrame (latestFrame);
+				if(isInitialQuaternion)
 				{
-					transform.rotation = Quaternion.Slerp (transform.rotation, newOrientation, interpolationSpeed);
+					initialOffset = Quaternion.Inverse(rotation);
+					isInitialQuaternion = false;
+					return;
 				}
+				finalRotation = isBoneRotated()? rotation * initialOffset * importOffset : rotation * initialOffset;
+				transform.localRotation = Quaternion.Slerp (transform.localRotation, finalRotation, interpolationSpeed);
 			}
         }
     }
 
-    Quaternion ParseOrientationFrame(string frame/*, ref int calibrationStatus*/)
+    Quaternion ParseOrientationFrame(string frame)
     {
-        Quaternion rotation = Quaternion.identity;
+        Quaternion rotation = new Quaternion();
         string[] tokens = frame.Split(',');
 		if (tokens.Length < 4) 
 		{
@@ -60,17 +67,13 @@ public class IMU_Orientation : MonoBehaviour
 			Debug.LogWarning ("Parsing error with frame: "+ frame);
 			return transform.rotation;
 		}
-        //Cordinate system transfer
+        //Cordinate system transformation
         rotation.Set(-x, -z, -y, w);
-
-        //calibrationStatus = int.Parse(tokens[tokens.Length - 3]);
-        //m_checksum = Mathf.Sqrt(w * w + x * x + y * y + z * z);
-        //if(Mathf.Abs(m_checksum - float.Parse(tokens[tokens.Length-2])) < 0.1)
-        //{
-        Quaternion rotationAdjust = Quaternion.identity;
-        // http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/transforms/examples/index.htm
-        // 90 degree adjustment because of the mounting orientation
-        rotationAdjust.Set(0.7071f, 0, 0, 0.7071f);
-        return rotationAdjust * rotation;
+		return rotation;
     }
+
+	bool isBoneRotated()
+	{
+		return (boneType == BoneType.LeftUpperLeg || boneType == BoneType.RightUpperLeg);
+	}
 }

@@ -4,4 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/AR_MoCap.unity
+    guid: 7fcf38e5a8e884b1fac84ad0a370d72f
+  m_configObjects: {}
