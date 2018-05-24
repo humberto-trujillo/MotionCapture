@@ -1,18 +1,28 @@
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "Wire.h"
+
 #include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 
 /*
 Wifi stuff
 */
-const char* ssid     = "STR";      // SSID
-const char* password = "LABRTS2011-1";      // Password
-const char* host = "192.168.0.113";  //Server IP
-const int   port = 56789;            // Port serveur - Server Port
+const char* ssid     = "Totalplay-D495";      // SSID
+const char* password = "D4956AD4vdhr6Bj4";      // Password
+const char* host = "192.168.100.9";  //Server IP
+
+//const char* ssid     = "STR";
+//const char* password = "LABRTS2011-1";
+//const char* host = "192.168.0.113";
+
+const int   port = 5001;            // Port serveur - Server Port
 const int   watchdog = 5000;        // Fréquence du watchdog - Watchdog frequency
 unsigned long previousMillis = millis(); 
-WiFiClient client;
+//WiFiClient client;
+WiFiUDP Udp;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char replyPacket[255];  // a reply string to send back
 
 MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
@@ -61,15 +71,18 @@ void setup()
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   
-  if (!client.connect(host, port))
-  {
-    Serial.println("connection failed");
-  }
-  else
-  {
-    Serial.println("Connection to Host successful!");
-  }
+//  if (!client.connect(host, port))
+//  {
+//    Serial.println("connection failed");
+//  }
+//  else
+//  {
+//    Serial.println("Connection to Host successful!");
+//  }
   
+  Udp.begin(localUdpPort);
+  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+
   
 
   Serial.println(F("Initializing I2C devices..."));
@@ -159,7 +172,11 @@ void loop()
     frame += ",";
     frame += q.z;
     Serial.println(frame);
-    client.println(frame);
+    //client.print(frame);
+    frame.toCharArray(replyPacket,255);
+    Udp.beginPacket(host, port);
+    Udp.write(replyPacket);
+    Udp.endPacket();
   }
-  delay(5);
+  delay(10);
 }
