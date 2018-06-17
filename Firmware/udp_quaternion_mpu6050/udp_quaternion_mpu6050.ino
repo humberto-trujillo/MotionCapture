@@ -3,29 +3,31 @@
 #include "Wire.h"
 
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 
-/*
-Wifi stuff
-*/
-const char* ssid     = "Totalplay-D495";      // SSID
-const char* password = "D4956AD4vdhr6Bj4";      // Password
-const char* host = "192.168.100.9";  //Server IP
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
 
-//const char* ssid     = "STR";
-//const char* password = "LABRTS2011-1";
-//const char* host = "192.168.0.113";
+//const char* ssid                = "Totalplay-D495";         // WiFi SSID
+//const char* password            = "D4956AD4vdhr6Bj4";       // WiFi Password
 
-const int   port = 5001;            // Port serveur - Server Port
-const int   watchdog = 5000;        // Fréquence du watchdog - Watchdog frequency
-unsigned long previousMillis = millis(); 
-//WiFiClient client;
+const char* host                = "192.168.100.9";          // UDP Server IP
+const int port                  = 5001;                     // UDP Server Port
+
+//bool ota_flag                       = true;
+//const unsigned int ota_timeout_ms   = 10000;
+//unsigned int time_elapsed           = 0;
+
 WiFiUDP Udp;
-unsigned int localUdpPort = 4210;  // local port to listen on
-char replyPacket[255];  // a reply string to send back
+unsigned int localUdpPort = 4210;       // local port to listen on
+char replyPacket[255];                  // a reply string to send back
 
 MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
+
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
@@ -44,46 +46,58 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 
-void dmpDataReady() 
-{
-  mpuInterrupt = true;
-}
-
-void setup() 
-{
-  Wire.begin();
-  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
-  Serial.begin(38400);
-  while (!Serial); // wait for Leonardo enumeration, others continue immediately
-  // initialize device
-
-  
+void wifi_connection(){
   Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) 
-  {
-    delay(500);
-    Serial.print(".");
-  }
+  //Serial.println(ssid);
+  WiFi.mode(WIFI_STA);
+
+  WiFiManager wifiManager;
+  wifiManager.autoConnect("Sensor_1");
+  
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
   Serial.println("");
   Serial.println("WiFi connected");  
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  
-//  if (!client.connect(host, port))
-//  {
-//    Serial.println("connection failed");
-//  }
-//  else
-//  {
-//    Serial.println("Connection to Host successful!");
-//  }
-  
+}
+
+void dmpDataReady() {
+  mpuInterrupt = true;
+}
+
+void setup() {
+  Wire.begin();
+  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+  Serial.begin(115200);
+
+  wifi_connection();    //connect to wifi access point with OTA
+
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
-
-  
 
   Serial.println(F("Initializing I2C devices..."));
   mpu.initialize();
@@ -91,19 +105,22 @@ void setup()
   // verify connection
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  
   // wait for ready
-  Serial.println(F("\nSend any character to begin DMP programming and demo: "));
-  while (Serial.available() && Serial.read()); // empty buffer
-  while (!Serial.available());                 // wait for data
-  while (Serial.available() && Serial.read()); // empty buffer again
+  //Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+  //while (Serial.available() && Serial.read()); // empty buffer
+  //while (!Serial.available());                 // wait for data
+  //while (Serial.available() && Serial.read()); // empty buffer again
+
+  
   // load and configure the DMP
   Serial.println(F("Initializing DMP..."));
   devStatus = mpu.dmpInitialize();
   // supply your own gyro offsets here, scaled for min sensitivity
-  mpu.setXGyroOffset(220);
-  mpu.setYGyroOffset(76);
-  mpu.setZGyroOffset(-85);
-  mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+  //mpu.setXGyroOffset(220);
+  //mpu.setYGyroOffset(76);
+  //mpu.setZGyroOffset(-85);
+  //mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) 
   {
@@ -134,9 +151,14 @@ void setup()
 
 void loop() 
 {
+  ArduinoOTA.handle();
+  yield();
+
   // if programming failed, don't try to do anything
   if (!dmpReady)
     return;
+
+  
   // reset interrupt flag and get INT_STATUS byte
   mpuInterrupt = false;
   mpuIntStatus = mpu.getIntStatus();
@@ -171,9 +193,10 @@ void loop()
     frame += q.y;
     frame += ",";
     frame += q.z;
+
     Serial.println(frame);
-    //client.print(frame);
     frame.toCharArray(replyPacket,255);
+    
     Udp.beginPacket(host, port);
     Udp.write(replyPacket);
     Udp.endPacket();
