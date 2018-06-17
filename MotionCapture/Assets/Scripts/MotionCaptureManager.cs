@@ -58,4 +58,10 @@ public class MotionCaptureManager : MonoBehaviour
 		}
 		return null;
 	}
+
+	public void StartMotionCapture()
+	{
+		Debug.Log("Starting Motion Capture!");
+		udpCommunication.SendToAll("Start");
+	}
 }

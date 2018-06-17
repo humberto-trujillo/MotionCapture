@@ -30,18 +30,15 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 
 	public void AddClient(IPEndPoint ipEndpoint)
     {
-		if(clientList.Contains(ipEndpoint) == false)
-		{ // If it's a new client, add to the client list
-			Debug.Log("Connection from "+ipEndpoint);
-			clientList.Add(ipEndpoint);
+		Debug.Log("Connection from "+ipEndpoint);
+		clientList.Add(ipEndpoint);
 
-			UdpConnectedIMU connection = new UdpConnectedIMU(ipEndpoint.Address.ToString());
-			connections.Add(connection);
+		UdpConnectedIMU connection = new UdpConnectedIMU(ipEndpoint.Address.ToString());
+		connections.Add(connection);
 
-			if (OnClientConnected != null) 
-			{
-				OnClientConnected (connection);
-			}
+		if (OnClientConnected != null) 
+		{
+			OnClientConnected (connection);
 		}
     }
 
@@ -59,9 +56,14 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 		{
 			IPEndPoint ipEndpoint = null;
 			byte[] data = serverConnection.EndReceive(ar, ref ipEndpoint);
-			AddClient(ipEndpoint);
+
+			if(clientList.Contains(ipEndpoint) == false)
+			{
+				AddClient(ipEndpoint);
+			}
 
 			string message = System.Text.Encoding.UTF8.GetString(data);
+			Debug.Log(message);
 			UdpConnectedIMU correspondingConnection = connections.Find(con => con.ipAddress == ipEndpoint.Address.ToString());
 			if(correspondingConnection != null)
 			{
@@ -71,7 +73,6 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 			{
 				Debug.Log("Connection not registered!");
 			}
-			//Debug.Log(message + " From: "+ipEndpoint);
 		}
 		catch(SocketException e)
 		{
@@ -80,8 +81,25 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 		serverConnection.BeginReceive(OnReceive, null);
     }
 
-    private void OnApplicationQuit()
+	public void SendToAll(string msg)
+	{
+		Byte[] sendBytes = System.Text.Encoding.ASCII.GetBytes(msg);
+		foreach (var client in clientList)
+		{
+			try
+			{
+				serverConnection.Send(sendBytes, sendBytes.Length, client);
+			}
+			catch (Exception e)
+			{
+				Debug.LogWarning(e.ToString());	
+			}
+		}
+	}
+
+	private void OnApplicationQuit()
     {
+		SendToAll("StandBy");
 		serverConnection.Close();
     }
 }

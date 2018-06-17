@@ -17,13 +17,14 @@
 const char* host                = "192.168.100.9";          // UDP Server IP
 const int port                  = 5001;                     // UDP Server Port
 
-//bool ota_flag                       = true;
-//const unsigned int ota_timeout_ms   = 10000;
-//unsigned int time_elapsed           = 0;
-
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;       // local port to listen on
 char replyPacket[255];                  // a reply string to send back
+
+bool standBy = true;
+String standBy_msg = "standBy";
+const unsigned int send_rate_ms = 1500;
+unsigned int current_millis = 0;
 
 MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
@@ -94,7 +95,7 @@ void setup() {
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
   Serial.begin(115200);
 
-  wifi_connection();    //connect to wifi access point with OTA
+  wifi_connection();    //connect to wifi access point with WiFiManager + OTA Update
 
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
@@ -106,24 +107,17 @@ void setup() {
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
   
-  // wait for ready
-  //Serial.println(F("\nSend any character to begin DMP programming and demo: "));
-  //while (Serial.available() && Serial.read()); // empty buffer
-  //while (!Serial.available());                 // wait for data
-  //while (Serial.available() && Serial.read()); // empty buffer again
-
-  
   // load and configure the DMP
   Serial.println(F("Initializing DMP..."));
   devStatus = mpu.dmpInitialize();
   // supply your own gyro offsets here, scaled for min sensitivity
-  //mpu.setXGyroOffset(220);
-  //mpu.setYGyroOffset(76);
-  //mpu.setZGyroOffset(-85);
-  //mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+  mpu.setXGyroOffset(220);
+  mpu.setYGyroOffset(76);
+  mpu.setZGyroOffset(-85);
+  mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+  
   // make sure it worked (returns 0 if so)
-  if (devStatus == 0) 
-  {
+  if (devStatus == 0){
     // turn on the DMP, now that it's ready
     Serial.println(F("Enabling DMP..."));
     mpu.setDMPEnabled(true);
@@ -137,8 +131,7 @@ void setup() {
     // get expected DMP packet size for later comparison
     packetSize = mpu.dmpGetFIFOPacketSize();
   }
-  else 
-  {
+  else{
     // ERROR!
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
@@ -149,8 +142,8 @@ void setup() {
   }
 }
 
-void loop() 
-{
+void loop(){
+  
   ArduinoOTA.handle();
   yield();
 
@@ -158,6 +151,27 @@ void loop()
   if (!dmpReady)
     return;
 
+  if(standBy){
+    if(millis() > current_millis){
+      current_millis = millis() + send_rate_ms;
+      standBy_msg.toCharArray(replyPacket,255);
+      Udp.beginPacket(host, port);
+      Udp.write(replyPacket);
+      Udp.endPacket();
+    }
+    if(Udp.parsePacket()){
+      standBy = false;
+    }
+    else{
+      return;
+    }
+  }
+
+  //if Server Application stops then go back to standBy
+  if(Udp.parsePacket()){
+    standBy = true;
+    return;
+  }
   
   // reset interrupt flag and get INT_STATUS byte
   mpuInterrupt = false;
@@ -165,14 +179,12 @@ void loop()
   // get current FIFO count
   fifoCount = mpu.getFIFOCount();
   // check for overflow (this should never happen unless our code is too inefficient)
-  if ((mpuIntStatus & 0x10) || fifoCount == 1024) 
-  {
+  if ((mpuIntStatus & 0x10) || fifoCount == 1024){
     // reset so we can continue cleanly
     mpu.resetFIFO();
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
   }
-  else if (mpuIntStatus & 0x02)
-  {
+  else if (mpuIntStatus & 0x02){
     // wait for correct available data length, should be a VERY short wait
     while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
     // read a packet from FIFO
@@ -201,5 +213,5 @@ void loop()
     Udp.write(replyPacket);
     Udp.endPacket();
   }
-  delay(10);
+  delay(20);
 }
