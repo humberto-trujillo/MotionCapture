@@ -62,6 +62,11 @@ public class MotionCaptureManager : MonoBehaviour
 	public void StartMotionCapture()
 	{
 		Debug.Log("Starting Motion Capture!");
-		udpCommunication.SendToAll("Start");
+		udpCommunication.SendToAll("START");
+	}
+	
+	public void StopMotionCapture()
+	{
+		udpCommunication.SendToAll("STANDBY");
 	}
 }

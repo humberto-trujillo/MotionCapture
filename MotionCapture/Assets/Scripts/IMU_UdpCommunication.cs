@@ -67,16 +67,17 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 			UdpConnectedIMU correspondingConnection = connections.Find(con => con.ipAddress == ipEndpoint.Address.ToString());
 			if(correspondingConnection != null)
 			{
-				correspondingConnection.LatestMessage = message;
+				//correspondingConnection.LatestMessage = message;
+				correspondingConnection.TelemetryUpdate(message);
 			}
 			else
 			{
-				Debug.Log("Connection not registered!");
+				Debug.LogWarning("Connection not registered!");
 			}
 		}
 		catch(SocketException e)
 		{
-			Debug.Log("Client disconnected! "+ e);
+			Debug.LogWarning("Client disconnected! "+ e);
 		}
 		serverConnection.BeginReceive(OnReceive, null);
     }
@@ -99,7 +100,7 @@ public class IMU_UdpCommunication : Singleton<IMU_UdpCommunication>
 
 	private void OnApplicationQuit()
     {
-		SendToAll("StandBy");
+		SendToAll("STANDBY");
 		serverConnection.Close();
     }
 }

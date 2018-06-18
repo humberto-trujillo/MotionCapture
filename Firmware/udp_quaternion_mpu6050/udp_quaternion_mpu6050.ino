@@ -5,26 +5,29 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
-#include <ArduinoOTA.h>
+//#include <ArduinoOTA.h>
 
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
 
-//const char* ssid                = "Totalplay-D495";         // WiFi SSID
-//const char* password            = "D4956AD4vdhr6Bj4";       // WiFi Password
+#include <ArduinoJson.h>
 
-const char* host                = "192.168.100.9";          // UDP Server IP
-const int port                  = 5001;                     // UDP Server Port
 
 WiFiUDP Udp;
-unsigned int localUdpPort = 4210;       // local port to listen on
-char replyPacket[255];                  // a reply string to send back
+unsigned int localUdpPort       = 4210;             // local port to listen on
+const char* host                = "192.168.100.9";  // UDP Server IP
+const int port                  = 5001;             // UDP Server Port
+char incomingPacket[255];                           // incomming messages buffer
+char outgoingPacket[255];                           // outgoing messages buffer
 
 bool standBy = true;
-String standBy_msg = "standBy";
 const unsigned int send_rate_ms = 1500;
 unsigned int current_millis = 0;
+
+StaticJsonBuffer<200> jsonBuffer;
+JsonObject& jsonRoot = jsonBuffer.createObject();
+JsonObject& jsonQuaternion = jsonRoot.createNestedObject("quaternion");
 
 MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
@@ -36,6 +39,7 @@ uint8_t devStatus;      // return status after each device operation (0 = succes
 uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
+
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
@@ -48,42 +52,64 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 
 void wifi_connection(){
-  Serial.print("Connecting to ");
-  //Serial.println(ssid);
-  WiFi.mode(WIFI_STA);
-
+  //WiFi.mode(WIFI_STA);
   WiFiManager wifiManager;
   wifiManager.autoConnect("Sensor_1");
-  
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH)
-      type = "sketch";
-    else // U_SPIFFS
-      type = "filesystem";
-
-    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
   Serial.println("");
   Serial.println("WiFi connected");  
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  
+//  ArduinoOTA.onStart([]() {
+//    String type;
+//    if (ArduinoOTA.getCommand() == U_FLASH)
+//      type = "sketch";
+//    else // U_SPIFFS
+//      type = "filesystem";
+//
+//    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+//    Serial.println("Start updating " + type);
+//  });
+//  ArduinoOTA.onEnd([]() {
+//    Serial.println("\nEnd");
+//  });
+//  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+//    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+//  });
+//  ArduinoOTA.onError([](ota_error_t error) {
+//    Serial.printf("Error[%u]: ", error);
+//    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+//    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+//    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+//    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+//    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+//  });
+//  ArduinoOTA.begin();
+}
+
+void initTelemetryJson(){
+  jsonRoot["programState"] = "STANDBY";
+  jsonQuaternion["w"] = 0;
+  jsonQuaternion["x"] = 0;
+  jsonQuaternion["y"] = 0;
+  jsonQuaternion["z"] = 0;
+}
+
+void checkIncomingMessages(){
+  if(Udp.parsePacket()){
+    int len = Udp.read(incomingPacket, 255);
+    if (len > 0){
+      incomingPacket[len] = 0;
+      if(strcmp(incomingPacket, "START") == 0){
+        standBy = false;
+        jsonRoot["programState"] = "START";
+      }
+      else if(strcmp(incomingPacket, "STANDBY") == 0){
+        standBy = true;
+        jsonRoot["programState"] = "STANDBY";
+      }
+    }
+  }
 }
 
 void dmpDataReady() {
@@ -91,11 +117,12 @@ void dmpDataReady() {
 }
 
 void setup() {
-  Wire.begin();
+  Wire.begin(0,2);
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
   Serial.begin(115200);
 
   wifi_connection();    //connect to wifi access point with WiFiManager + OTA Update
+  initTelemetryJson();  // initialize Telemetry to be sent;
 
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
@@ -144,32 +171,23 @@ void setup() {
 
 void loop(){
   
-  ArduinoOTA.handle();
-  yield();
+  //ArduinoOTA.handle();
+  //yield();
 
   // if programming failed, don't try to do anything
   if (!dmpReady)
     return;
 
+  checkIncomingMessages();
+
   if(standBy){
     if(millis() > current_millis){
       current_millis = millis() + send_rate_ms;
-      standBy_msg.toCharArray(replyPacket,255);
+      jsonRoot.printTo(outgoingPacket,255);
       Udp.beginPacket(host, port);
-      Udp.write(replyPacket);
+      Udp.write(outgoingPacket);
       Udp.endPacket();
     }
-    if(Udp.parsePacket()){
-      standBy = false;
-    }
-    else{
-      return;
-    }
-  }
-
-  //if Server Application stops then go back to standBy
-  if(Udp.parsePacket()){
-    standBy = true;
     return;
   }
   
@@ -197,21 +215,15 @@ void loop(){
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-    String frame = "";
-    frame += q.w;
-    frame += ",";
-    frame += q.x;
-    frame += ",";
-    frame += q.y;
-    frame += ",";
-    frame += q.z;
-
-    Serial.println(frame);
-    frame.toCharArray(replyPacket,255);
+    jsonQuaternion["w"] = q.w;
+    jsonQuaternion["x"] = q.x;
+    jsonQuaternion["y"] = q.y;
+    jsonQuaternion["z"] = q.z;
     
+    jsonRoot.printTo(outgoingPacket,255);
     Udp.beginPacket(host, port);
-    Udp.write(replyPacket);
+    Udp.write(outgoingPacket);
     Udp.endPacket();
   }
-  delay(20);
+  delay(10);
 }

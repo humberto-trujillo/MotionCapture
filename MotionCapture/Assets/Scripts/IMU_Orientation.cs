@@ -31,11 +31,9 @@ public class IMU_Orientation : MonoBehaviour
     {
         if(m_IMUConnection != null)
         {
-            string latestFrame = m_IMUConnection.LatestMessage;
-			if (!string.IsNullOrEmpty (latestFrame) && !latestFrame.Equals("standBy")) 
+			if(!m_IMUConnection.standBy)
 			{
-				Debug.Log(latestFrame);
-				Quaternion rotation = ParseOrientationFrame (latestFrame);
+				Quaternion rotation = MapQuaternion(m_IMUConnection.GetSensorQuaternion());
 				if(isInitialQuaternion)
 				{
 					initialOffset = Quaternion.Inverse(rotation);
@@ -47,6 +45,18 @@ public class IMU_Orientation : MonoBehaviour
 			}
         }
     }
+
+	Quaternion MapQuaternion(Quaternion sensorQuaternion)
+	{
+		//return sensorQuaternion;
+		//return new Quaternion(sensorQuaternion.x, sensorQuaternion.y, sensorQuaternion.z, sensorQuaternion.w);
+		//return new Quaternion(sensorQuaternion.x, sensorQuaternion.z, sensorQuaternion.y, sensorQuaternion.w);
+		//return new Quaternion(sensorQuaternion.y, sensorQuaternion.x, sensorQuaternion.z, sensorQuaternion.w);
+		//return new Quaternion(sensorQuaternion.y, sensorQuaternion.z, sensorQuaternion.x, sensorQuaternion.w);
+		//return new Quaternion(sensorQuaternion.z, sensorQuaternion.x, sensorQuaternion.y, sensorQuaternion.w);
+		//return new Quaternion(sensorQuaternion.z, sensorQuaternion.y, sensorQuaternion.x, sensorQuaternion.w);
+		return new Quaternion(-sensorQuaternion.x, -sensorQuaternion.z, -sensorQuaternion.y, sensorQuaternion.w);
+	}
 
     Quaternion ParseOrientationFrame(string frame)
     {
@@ -84,7 +94,6 @@ public class IMU_Orientation : MonoBehaviour
 		lastRawQuaternion = new Quaternion(raw.x,raw.y,raw.z,raw.w);
         //Cordinate system transformation
         rotation.Set(-x, -z, -y, w);
-		//return (isQuaternionCorrupt(rotation))? transform.localRotation : rotation;
 		return rotation;
     }
 
