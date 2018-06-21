@@ -54,8 +54,8 @@ public class CameraFocus : MonoBehaviour {
 		{
 			yield return new WaitForSeconds(2f);
 			FocusTo(pos);
-			yield return new WaitForSeconds(2f);
-			Reset();
+			//yield return new WaitForSeconds(2f);
+			//Reset();
         }
 	}
 }
