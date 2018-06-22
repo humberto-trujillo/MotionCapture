@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class CameraFocus : MonoBehaviour {
 	
@@ -9,11 +7,55 @@ public class CameraFocus : MonoBehaviour {
 	public float moveTime = 1f;
 	public Transform startPosition;
 
-	public Transform[] positions;
+	[Header("Positions")]
+	[SerializeField] Transform Head;
+	[SerializeField] Transform Torso;
+	[SerializeField] Transform RightForearm;
+	[SerializeField] Transform RightShoulder;
+	[SerializeField] Transform LeftForearm;
+	[SerializeField] Transform LeftShoulder;
+	[SerializeField] Transform RightUpperLeg;
+	[SerializeField] Transform RightLowerLeg;
+	[SerializeField] Transform LeftUpperLeg;
+	[SerializeField] Transform LeftLowerLeg;
 
-	private void Start()
+	public void FocusTo(BoneType boneType)
 	{
-		StartCoroutine(TestFocusRoutine());	
+		switch (boneType)
+		{
+			case BoneType.Head:
+				FocusTo(Head);
+				break;
+			case BoneType.Torso:
+				FocusTo(Torso);
+                break;
+			case BoneType.RightForearm:
+				FocusTo(RightForearm);
+                break;
+			case BoneType.RightShoulder:
+				FocusTo(RightShoulder);
+                break;
+			case BoneType.LeftForearm:
+				FocusTo(LeftForearm);
+                break;
+			case BoneType.LeftShoulder:
+				FocusTo(LeftShoulder);
+                break;
+			case BoneType.RightUpperLeg:
+				FocusTo(RightUpperLeg);
+                break;
+			case BoneType.RightLowerLeg:
+				FocusTo(RightLowerLeg);
+                break;
+			case BoneType.LeftUpperLeg:
+				FocusTo(LeftUpperLeg);
+				break;
+			case BoneType.LeftLowerLeg:
+				FocusTo(LeftLowerLeg);
+                break;
+			default:
+				break;
+		}
 	}
 
 	public void FocusTo(Transform newPos)
@@ -46,16 +88,5 @@ public class CameraFocus : MonoBehaviour {
             "delay", delay,
             "easetype", easeType
         ));
-	}
-
-	IEnumerator TestFocusRoutine()
-	{
-		foreach (var pos in positions)
-		{
-			yield return new WaitForSeconds(2f);
-			FocusTo(pos);
-			//yield return new WaitForSeconds(2f);
-			//Reset();
-        }
 	}
 }

@@ -23,7 +23,7 @@ GameObject:
   - component: {fileID: 114538088078331110}
   - component: {fileID: 114245788791890836}
   m_Layer: 5
-  m_Name: MPU
+  m_Name: sensorItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -81,7 +81,7 @@ RectTransform:
   m_GameObject: {fileID: 1389457905487704}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0

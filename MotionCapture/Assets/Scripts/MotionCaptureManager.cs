@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public enum BoneType
 {
@@ -12,7 +11,8 @@ public enum BoneType
 	RightUpperLeg,
 	RightLowerLeg,
 	LeftUpperLeg,
-	LeftLowerLeg
+	LeftLowerLeg,
+    None
 }
 
 public class MotionCaptureManager : MonoBehaviour
