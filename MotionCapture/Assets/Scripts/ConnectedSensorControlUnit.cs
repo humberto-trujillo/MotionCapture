@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class ConnectedSensorControlUnit : MonoBehaviour 
 {
-	public delegate void SensorDropped(BoneType boneType);
-	public event SensorDropped OnSensorDropped;
+	public delegate void ItemDropped(ConnectedSensor sensorItem);
+	public event ItemDropped OnSensorDropped;
     
 	/// <summary>
     /// Operate all drag and drop requests and events from children cells
@@ -24,9 +25,20 @@ public class ConnectedSensorControlUnit : MonoBehaviour
                 if (desc.permission == true)                                    // If drop successful (was permitted before)
                 {
                     Debug.Log("Successful drop " + desc.item.name + " from " + sourceSheet.name + " to " + destinationSheet.name);
+					ConnectedSensor sensorItem = desc.item.GetComponent<ConnectedSensor>();
+					//sensorItem.boneType = desc.destinationCell.boneType;
+                    try
+					{
+						sensorItem.boneType = (BoneType)Enum.Parse(typeof(BoneType), desc.destinationCell.name);
+                    }
+                    catch (Exception ex)
+                    {
+						Debug.Log(ex);
+						sensorItem.boneType = BoneType.None;
+                    }
 					if(OnSensorDropped != null)
 					{
-						OnSensorDropped(desc.destinationCell.boneType);
+						OnSensorDropped(sensorItem);
 					}
                 }
                 else                                                            // If drop unsuccessful (was denied before)
@@ -63,6 +75,24 @@ public class ConnectedSensorControlUnit : MonoBehaviour
                 }
             }
         }
+    }
+
+	public ConnectedSensor AddItemInFreeCell(ConnectedSensor sensorItemPrefab)
+    {
+		ConnectedSensor connectedSensor = null;
+        foreach (DragAndDropCell cell in GetComponentsInChildren<DragAndDropCell>())
+        {
+            if (cell != null)
+            {
+                if (cell.GetItem() == null)
+                {
+					connectedSensor = Instantiate(sensorItemPrefab.gameObject).GetComponent<ConnectedSensor>();
+					cell.AddItem(connectedSensor.GetComponent<DragAndDropItem>());
+                    break;
+                }
+            }
+        }
+		return connectedSensor;
     }
 
     /// <summary>

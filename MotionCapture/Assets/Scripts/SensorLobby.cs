@@ -1,40 +1,57 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class SensorLobby : MonoBehaviour
 {
-	public Button startButton;
-	public bool isConfigured = false;
-	public ConnectedSensorControlUnit connectedControlUnit;
-	public ConnectedSensorControlUnit assignedControlUnit;
-	public DragAndDropItem sensorItemPrefab;
-	public CameraFocus cameraFocus;
+	[SerializeField] Button startButton;
+    [SerializeField] ConnectedSensorControlUnit connectedControlUnit;
+    [SerializeField] ConnectedSensorControlUnit assignedControlUnit;
+    [SerializeField] ConnectedSensor connectedSensorPrefab;
+    [SerializeField] CameraFocus cameraFocus;
+
 
 	private IMU_UdpCommunication udpCommunication;
+	private List<ConnectedSensor> assignedSensors = new List<ConnectedSensor>();
 
 	private void Start()
 	{
 		startButton.interactable = false;
 		udpCommunication = IMU_UdpCommunication.Instance;
 		udpCommunication.OnClientConnected += OnConnectedSensor;
-		assignedControlUnit.OnSensorDropped += OnSensorDropped;
-		connectedControlUnit.OnSensorDropped += OnSensorDropped;
+
+		assignedControlUnit.OnSensorDropped += OnSensorAssigned;
+		connectedControlUnit.OnSensorDropped += OnSensorTakeBack;
 	}
 
 	private void OnConnectedSensor(UdpConnectedIMU connection)
 	{
-		connectedControlUnit.AddItemInFreeCell(sensorItemPrefab);
+		ConnectedSensor sensor = connectedControlUnit.AddItemInFreeCell(connectedSensorPrefab);
+		sensor.Init(connection);
 	}
     
-	private void OnSensorDropped(BoneType boneType)
+	private void OnSensorTakeBack(ConnectedSensor sensorItem)
 	{
-		if(boneType != BoneType.None)
+		if(assignedSensors.Contains(sensorItem))
 		{
-		    cameraFocus.FocusTo(boneType);
-        }
-		else
-		{
-			cameraFocus.Reset();
+			assignedSensors.Remove(sensorItem);
 		}
+		cameraFocus.Reset();
+		ValidateSetup();
+	}
+
+	private void OnSensorAssigned(ConnectedSensor sensorItem)
+	{
+		if(!assignedSensors.Contains(sensorItem))
+		{
+			assignedSensors.Add(sensorItem);
+        }
+		cameraFocus.FocusTo(sensorItem.boneType);
+		ValidateSetup();
+	}
+
+    private void ValidateSetup()
+	{
+		startButton.interactable = assignedSensors.Count > 0;
 	}
 }

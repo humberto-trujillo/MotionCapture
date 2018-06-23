@@ -42,8 +42,6 @@ public class DragAndDropCell : MonoBehaviour, IDropHandler
 	[Tooltip("This cell has unlimited amount of items")]
     public bool unlimitedSource = false;                                    // Item from this cell will be cloned on drag start
 
-	public BoneType boneType = BoneType.None;
-
 	private DragAndDropItem myDadItem;										// Item of this DaD cell
 
     void OnEnable()
