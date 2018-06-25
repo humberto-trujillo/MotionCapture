@@ -7,8 +7,7 @@ public class ConnectedSensor : MonoBehaviour
 {
 	public BoneType boneType = BoneType.None;
 	public TextMeshProUGUI ipAddressText;
-	private UdpConnectedIMU m_imuConnection;
-
+	public UdpConnectedIMU m_imuConnection;
 
 	public void Init(UdpConnectedIMU conenction)
 	{

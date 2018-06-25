@@ -16,7 +16,7 @@
 
 WiFiUDP Udp;
 unsigned int localUdpPort       = 4210;             // local port to listen on
-const char* host                = "192.168.100.9";  // UDP Server IP
+const char* host                = "192.168.100.7";  // UDP Server IP
 const int port                  = 5001;             // UDP Server Port
 char incomingPacket[255];                           // incomming messages buffer
 char outgoingPacket[255];                           // outgoing messages buffer
@@ -117,7 +117,8 @@ void dmpDataReady() {
 }
 
 void setup() {
-  Wire.begin(0,2);
+  //Wire.begin(0,2);
+  Wire.begin();
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
   Serial.begin(115200);
 
